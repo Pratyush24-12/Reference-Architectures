@@ -1,0 +1,37 @@
+Core Architecture Components
+1. Identity & Resource Hierarchy (Landing Zone)
+Organization Node: Highest-level resource node representing the enterprise domain.
+Folder Structure: Enforces policy separation by environment (Prod, Staging, Dev) or business unit.
+
+Identity Federation: Integrated with existing IdP (Microsoft Entra ID, Okta) via Cloud Identity using SAML 2.0 / OIDC.  
+IAM & Least Privilege: Access granted using Google Groups tied to predefined or custom IAM roles. 
+Service accounts use short-lived credentials via IAM Workload Identity Federation.  
+
+2. Network Topology & Edge SecurityShared VPC: Single host project controls subnets, firewall rules, and routes across attached service projects. 
+Perimeter Security: Cloud Armor handles DDoS protection and WAF rules (OWASP Top 10) at the edge, integrated with Cloud Load Balancing.
+Egress Traffic Control: Private workloads route internet traffic through Cloud NAT without public IPs assigned to compute resources.
+Hybrid Connectivity: Cloud VPN (IPsec) or Cloud Interconnect links the enterprise on-premises data center directly to the Shared VPC.
+
+3. Compute & Application HostingContainer Workloads: Google Kubernetes Engine (GKE) Autopilot for microservices requiring orchestration, autoscaling, and private cluster configurations.
+Serverless Services: Cloud Run for stateless API containers, deployed behind private service connectors.
+Legacy / Stateful Compute: Compute Engine Managed Instance Groups (MIGs) configured across multiple availability zones with auto-healing enabled.  
+
+4. Data Layer & StorageRelational Storage: Cloud SQL (HA multi-AZ pair) or Cloud Spanner for high-availability database requirements with automated backups.
+Unstructured Storage: Cloud Storage (GCS) buckets with lifecycle rules (Standard -> Nearline -> Coldline) and CMEK (Customer-Managed Encryption Keys).
+Event-Driven Stream Data: Cloud Pub/Sub decoupled messaging queue driving processing pipelines with Dataflow (Apache Beam).
+Analytics & AI: BigQuery serving as the centralized enterprise data warehouse with direct access for Vertex AI models.
+
+5. Security, Governance & ObservabilityKey Management: Cloud KMS manages lifecycle of customer-managed keys (CMEK) for at-rest data encryption.
+Secrets Management: Secret Manager securely stores and rotates API keys, database credentials, and certs.Security Posture: Security Command Center (SCC) Premium scans for misconfigurations, compliance drifts, 
+and active threats.
+Centralized Logging & Monitoring: Cloud Logging aggregated sinks route logs to BigQuery for audits and SIEM integration, alongside metrics mapped in Cloud Monitoring dashboards. 
+Standard Delivery MatrixPillarRecommended GCP ServicePrimary Use CaseIngress/EdgeCloud Armor + Global App Load BalancerDDoS/WAF protection & global 
+HTTP routingNetworkingShared VPC + Cloud NATCross-project networking & secure egress routingApp PlatformGKE Autopilot / Cloud RunScalable container orchestration & serverless application 
+executionDatabaseCloud SQL / Cloud SpannerManaged relational databases with multi-region HAObject StoreCloud Storage (GCS)Secure blob storage with automated lifecycle policiesAnalyticsBigQuery + 
+Pub/SubServerless event ingestion and real-time enterprise analyticsGovernanceTerraform + Security Command CenterInfrastructure as Code (IaC) with continuous threat detection
+Architect Implementation ChecklistDeploy Terraform Foundations: Provision organizational folders, service accounts, and policy constraints using Google's official terraform-example-foundation modules.  
+
+Apply Organization Policies: Restrict external IP creation, enforce trusted locations/regions, and block public Cloud Storage buckets.Establish VPC Service Controls: Define security perimeters around sensitive
+data APIs (BigQuery, Cloud Storage) to prevent unauthorized data exfiltration.
+
+Implement CI/CD Pipelines: Deploy application resources using Cloud Build or external platforms (GitHub Actions, GitLab CI) authenticated via Workload Identity Federation.
